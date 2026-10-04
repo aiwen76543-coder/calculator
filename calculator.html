@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>動態金額公式計算器</title>
+  <style>
+    :root {
+      --primary-color: #2b579a;
+      --primary-hover: #1e3d6b;
+      --success-color: #2ebd59;
+      --success-hover: #249646;
+      --danger-color: #e84118;
+      --danger-hover: #c23616;
+      --bg-color: #f5f7fa;
+      --panel-bg: #ffffff;
+      --text-color: #333333;
+      --border-color: #dcdde1;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 30px 15px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1050px;
+      background: var(--panel-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+      color: var(--primary-color);
+      margin-top: 0;
+      margin-bottom: 25px;
+      font-size: 24px;
+      border-left: 5px solid var(--primary-color);
+      padding-left: 12px;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f1f2f6;
+      color: #475569;
+      font-weight: 600;
+      padding: 14px 10px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .row-index {
+      font-weight: bold;
+      color: #7f8c8d;
+      text-align: center;
+      width: 40px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      max-width: 120px;
+      padding: 8px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(43, 87, 154, 0.1);
+    }
+
+    .val-c {
+      background-color: #fffde7;
+      border-color: #fff59d !important;
+    }
+
+    .result-span {
+      font-family: "Consolas", Monaco, monospace;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 15px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-add {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .btn-add:hover {
+      background-color: var(--success-hover);
+    }
+
+    .btn-delete {
+      background-color: transparent;
+      color: var(--danger-color);
+      padding: 6px 12px;
+    }
+
+    .btn-delete:hover {
+      background-color: #fcedea;
+      border-radius: 4px;
+    }
+
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .summary-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #475569;
+      margin-bottom: 4px;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+    }
+
+    .summary-row.total-highlight {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .summary-row.wan-highlight {
+      font-size: 18px;
+      font-weight: bold;
+      background-color: #eef9f1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px dashed #2ebd59;
+    }
+
+    .summary-val {
+      font-family: "Consolas", Monaco, monospace;
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>📊 動態計算器</h2>
+  
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align: center;">項目</th>
+          <th>市值</th>
+          <th>股數</th>
+          <th>匯率</th>
+          <th>台幣</th>
+          <th>港幣</th>
+          <th style="width: 80px;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="calc-tbody">
+        <!-- 預設第一行 -->
+        <tr class="calc-row">
+          <td class="row-index">1</td>
+          <td><input type="number" class="val-a" placeholder="市價" oninput="calculateRow(this)"></td>
+          <td><input type="number" class="val-b" placeholder="1000" oninput="calculateRow(this)"></td>
+          <td><input type="number" class="val-c" value="4.06" placeholder="匯率" oninput="calculateRow(this)"></td>
+          <td><span class="result-span res-ab" data-value="0">0.00</span></td>
+          <td><span class="result-span res-abc" data-value="0">0.00</span></td>
+          <td><button class="btn btn-delete" onclick="deleteRow(this)">🗑️ 刪除</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div>
+    <button class="btn btn-add" onclick="addRow()"> ✨ 新增計算行</button>
+  </div>
+
+  <!-- 最終匯總區塊 -->
+  <div class="summary-card">
+    <div class="summary-title">總計匯總</div>
+    <div class="summary-row">
+      <span>台幣總和:</span>
+      <span class="summary-val" id="total-ab">0.00</span>
+    </div>
+    <div class="summary-row total-highlight">
+      <span>港幣總和:</span>
+      <span class="summary-val" id="total-abc" style="color: #2ebd59;">0.00</span>
+    </div>
+    <!-- 新增的萬位專用列 -->
+    <div class="summary-row wan-highlight">
+      <span>港幣萬位:</span>
+      <span class="summary-val" id="total-abc-wan" style="color: #1b8a3e;">0w</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 計算單行
+  function calculateRow(element) {
+    const row = element.closest('.calc-row');
+    const a = parseFloat(row.querySelector('.val-a').value);
+    const b = parseFloat(row.querySelector('.val-b').value);
+    const c = parseFloat(row.querySelector('.val-c').value);
+
+    const spanAB = row.querySelector('.res-ab');
+    const spanABC = row.querySelector('.res-abc');
+
+    if (isNaN(a) || isNaN(b)) {
+      spanAB.innerText = "0.00";
+      spanAB.setAttribute('data-value', '0');
+      spanABC.innerText = "0.00";
+      spanABC.setAttribute('data-value', '0');
+      calculateTotal();
+      return;
+    }
+
+    const resAB = a * b;
+    spanAB.innerText = formatMoney(resAB);
+    spanAB.setAttribute('data-value', resAB.toString());
+
+    if (isNaN(c) || c === 0) {
+      spanABC.innerText = "錯誤 (匯率不能為0)";
+      spanABC.setAttribute('data-value', '0');
+    } else {
+      const resABC = resAB / c;
+      spanABC.innerText = formatMoney(resABC);
+      spanABC.setAttribute('data-value', resABC.toString());
+    }
+
+    calculateTotal();
+  }
+
+  // 計算並更新總和
+  function calculateTotal() {
+    let totalAB = 0;
+    let totalABC = 0;
+
+    document.querySelectorAll('.calc-row').forEach(row => {
+      const abVal = parseFloat(row.querySelector('.res-ab').getAttribute('data-value')) || 0;
+      const abcVal = parseFloat(row.querySelector('.res-abc').getAttribute('data-value')) || 0;
+
+      totalAB += abVal;
+      totalABC += abcVal;
+    });
+
+    document.getElementById('total-ab').innerText = formatMoney(totalAB);
+    document.getElementById('total-abc').innerText = formatMoney(totalABC);
+    
+    // 更新萬位簡化顯示
+    document.getElementById('total-abc-wan').innerText = formatToWan(totalABC);
+  }
+
+  // 動態新增行
+  function addRow() {
+    const tbody = document.getElementById('calc-tbody');
+    const rowCount = tbody.querySelectorAll('.calc-row').length + 1;
+    
+    const newRow = document.createElement('tr');
+    newRow.className = 'calc-row';
+    newRow.innerHTML = `
+      <td class="row-index">${rowCount}</td>
+      <td><input type="number" class="val-a" placeholder="市價" oninput="calculateRow(this)"></td>
+      <td><input type="number" class="val-b" placeholder="1000" oninput="calculateRow(this)"></td>
+      <td><input type="number" class="val-c" value="4.06" placeholder="4.06" oninput="calculateRow(this)"></td>
+      <td><span class="result-span res-ab" data-value="0">0.00</span></td>
+      <td><span class="result-span res-abc" data-value="0">0.00</span></td>
+      <td><button class="btn btn-delete" onclick="deleteRow(this)">🗑️ 刪除</button></td>
+    `;
+    tbody.appendChild(newRow);
+    updateIndices();
+  }
+
+  // 刪除行
+  function deleteRow(button) {
+    const tbody = document.getElementById('calc-tbody');
+    if (tbody.querySelectorAll('.calc-row').length <= 1) {
+      alert("請至少保留一行計算欄位！");
+      return;
+    }
+    button.closest('.calc-row').remove();
+    updateIndices();
+    calculateTotal();
+  }
+
+  // 重新整理行號
+  function updateIndices() {
+    document.querySelectorAll('.row-index').forEach((td, index) => {
+      td.innerText = index + 1;
+    });
+  }
+
+  // 金額格式化函數：加上千分位逗號，固定保留兩位小數
+  function formatMoney(num) {
+    return num.toLocaleString('zh-TW', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  // 萬位簡化核心邏輯
+  function formatToWan(num) {
+    if (num === 0) return "0w";
+    
+    // 換算成「萬」為單位
+    const wanValue = num / 10000;
+
+    // 邏輯1：如果金額 >= 100萬 (也就是 wanValue >= 100)，則只保留整數
+    if (num >= 1000000) {
+      return Math.floor(wanValue) + "w";
+    } 
+    // 邏輯2：如果金額 < 100萬，保留一位小數
+    else {
+      // 避免出現 3.0w 這種情況，如果剛好能整除一位數就用一位數
+      return Number(wanValue.toFixed(1)) + "w";
+    }
+  }
+</script>
+
+</body>
+</html>
